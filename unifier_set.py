@@ -1,5 +1,8 @@
 from disjoint_set import DisjointSet
 
+class UnificationError(Exception):
+    pass
+
 class UnifierSet(DisjointSet):
     def __init__(self, var_type):
         super().__init__()
@@ -42,7 +45,7 @@ class UnifierSet(DisjointSet):
                 self.map[r1] = r2
         else: # Both are different concrete objects => error.
             if r1 != r2:
-                raise Exception(f"Cannot unify concrete types {r1} and {r2}!")
+                raise UnificationError(f"Cannot unify concrete types {r1} and {r2}!")
 
     def equivalent(self, e1, e2):
         return self.same_set(e1, e2)

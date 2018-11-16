@@ -1,5 +1,5 @@
 import typ
-from disjoint_set import DisjointSet
+from unifier_set import UnifierSet, UnificationError
 
 def std_env():
     T = typ.Var()
@@ -18,16 +18,9 @@ def std_env():
 class Checker:
     def __init__(self):
         self.env = std_env()
-        self.unifiers = DisjointSet()
-
-    def prune_type(self, t):
-        if type(t) is typ.Var and t in self.unifiers:
-            return self.unifiers.root_of(t)
-        else:
-            return t
 
     def occurs_in_type(self, t1, t2):
-        t2 = self.prune_type(t2)
+        #t2 = self.prune_type(t2)
         if t1 == t2:
             return True
         elif isinstance(t2, typ.Poly):
@@ -36,27 +29,16 @@ class Checker:
             return False
 
     def unify(self, t1, t2):
-        unifiers = DisjointSet()
+        unifiers = UnifierSet(typ.Var)
         return self._unify_rec(t1, t2, unifiers)
 
     def _unify_rec(self, t1, t2, unifiers):
-        #t1 = self.prune_type(t1)
-        #t2 = self.prune_type(t2)
-
         if type(t1) is typ.Var:
             if t1 != t2:
-                if self.occurs_in_type(t1, t2):
-                    raise Exception("Recursive unification!")
+                if not self.occurs_in_type(t1, t2):
+                    unifiers.unify(t1, t2)
                 else:
-                    if t1 in unifiers and type(t2) is not typ.Var:
-                        t1_family = unifiers.family_of(t1)
-                        t1_family = {t for t in t1_family if type(t) is not typ.Var}
-                        t1_family = ", ".join(str(t) for t in t1_family)
-                        msg = f"{t1} is already unified with {t1_family}, and cannot unify with {t2} as well!"
-                        raise Exception(msg)
-                    unifiers.add(t1)
-                    unifiers.add(t2)
-                    unifiers.join(t1, t2)
+                    raise UnificationError("Recursive unification!")
             else:
                 # Type variables are identical, no need to unify.
                 pass
@@ -64,9 +46,9 @@ class Checker:
             self._unify_rec(t2, t1, unifiers) # Swap args and call again
         elif isinstance(t1, typ.Poly) and isinstance(t2, typ.Poly):
             if type(t1) is not type(t2):
-                raise Exception(f"Type mismatch: {t1} != {t2}")
+                raise UnificationError(f"Type mismatch: {t1} != {t2}")
             elif len(t1.vals) != len(t2.vals):
-                raise Exception(f"Type mismatch: {t1} has different arity than {t2}!")
+                raise UnificationError(f"Type mismatch: {t1} has different arity than {t2}!")
             else:
                 for x, y in zip(t1.vals, t2.vals):
                     self._unify_rec(x, y, unifiers)
@@ -92,9 +74,25 @@ if __name__ == "__main__":
     try:
         good = False
         unifs = checker.unify(Tuple(Bool, Int), Tuple(T, T))
-    except Exception as e:
+    except UnificationError as e:
         good = True
     finally:
         assert good, "Expected unification error!"
+
+    try:
+        good = False
+        unifs = checker.unify(Tuple(Bool, Int), Tuple(Bool))
+    except UnificationError as e:
+        good = True
+    finally:
+        assert good, "Expected unification error"
+    
+    try:
+        good = False
+        unifs = checker.unify(Tuple(Bool, Int), Fn(Bool, Int))
+    except UnificationError as e:
+        good = True
+    finally:
+        assert good, "Expected unification error"
 
     print("Tests Pass.")
