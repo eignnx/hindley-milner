@@ -3,7 +3,6 @@ import itertools
 
 def fresh_greek_stream():
     yield from uni.GREEK_LOWER
-    radix = 1
     n = 1
     while True:
         yield from (f"{ch}{n}" for ch in uni.GREEK_LOWER)
@@ -59,10 +58,11 @@ class Poly(Type):
     def __str__(self):
         if self.SIZE == 0:
             return self.__class__.__name__
-        sep = f" {self.JOIN} " if self.JOIN is not None else ", "
-        vals = sep.join(str(v) for v in self.vals)
-        lparen, rparen = self.PARENS if self.PARENS is not None else ("(", ")")
-        return f"{lparen}{vals}{rparen}"
+        else:
+            sep = f" {self.JOIN} " if self.JOIN is not None else ", "
+            vals = sep.join(str(v) for v in self.vals)
+            lparen, rparen = self.PARENS if self.PARENS is not None else ("(", ")")
+            return f"{lparen}{vals}{rparen}"
 
     def __hash__(self):
         return hash((self.__class__, self.vals))
