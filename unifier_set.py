@@ -1,4 +1,5 @@
 from disjoint_set import DisjointSet
+from utils import pairwise
 
 class UnificationError(Exception):
     pass
@@ -9,10 +10,7 @@ class UnifierSet(DisjointSet):
         self.var_type = var_type
 
     def unify(self, *e):
-        from itertools import tee
-        e, e_next = tee(iter(e))
-        _ = next(e_next)
-        for e1, e2 in zip(e, e_next):
+        for e1, e2 in pairwise(e):
             self._unify2(e1, e2)
 
     def _unify2(self, e1, e2):
