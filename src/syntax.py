@@ -1,15 +1,15 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
-from check import Checker
-from env import Env
-from typ import Type, Fn, Var
-from unifier_set import UnifierSet
+from src import check
+from src.typ import Type, Fn, Var
 
 
 class AstNode(ABC):
     @abstractmethod
-    def infer_type(self, type_env: Env, unifiers: UnifierSet) -> Type:
+    def infer_type(self, checker: check.Checker) -> Type:
         pass
 
 
@@ -25,8 +25,8 @@ class Ident(Value):
     """
     name: str
 
-    def infer_type(self, type_env: Env, unifiers: UnifierSet) -> Type:
-        return type_env[self]
+    def infer_type(self, checker: check.Checker) -> Type:
+        return checker.type_env[self]
 
     def __str__(self):
         return self.name
@@ -41,7 +41,7 @@ class Const(Value):
     value: object
     type: field(init=False)
 
-    def infer_type(self, type_env: Env, unifiers: UnifierSet) -> Type:
+    def infer_type(self, checker: check.Checker) -> Type:
         return self.type
 
     def __str__(self):
@@ -56,12 +56,15 @@ class Lambda(AstNode):
     arg: Ident
     body: AstNode
 
-    def infer_type(self, type_env: Env, unifiers: UnifierSet) -> Type:
+    def infer_type(self, checker: check.Checker) -> Type:
         arg_type = Var()
-        unifiers.add(arg_type)
-        type_env[self.arg] = arg_type
-        body_type = self.body.infer_type(type_env, unifiers)
-        arg_type = unifiers.root_of(arg_type)  # After inferring body's type, arg type might be known.
+        checker.unifiers.add(arg_type)
+        checker.type_env[self.arg] = arg_type
+        body_type = self.body.infer_type(checker)
+
+        # After inferring body's type, arg type might be known.
+        arg_type = checker.unifiers.root_of(arg_type)
+
         return Fn(arg_type, body_type)
 
 
@@ -73,25 +76,24 @@ class Call(AstNode):
     fn: Ident
     arg: AstNode
 
-    def infer_type(self, type_env: Env, unifiers: UnifierSet) -> Type:
-        checker = Checker()
+    def infer_type(self, checker: check.Checker) -> Type:
 
         # Set up a function type.
-        alpha, beta = Var(), Var()
-        unifiers.add(alpha), unifiers.add(beta)
+        alpha = checker.fresh_var()
+        beta = checker.fresh_var()
         fn_type = Fn(alpha, beta)
 
-        # Get best buess as to the type of `self.arg`.
-        arg_type = self.arg.infer_type(type_env, unifiers)
+        # Get best guess as to the type of `self.arg`.
+        arg_type = self.arg.infer_type(checker)
 
         # Link that best guess with the new type variable `beta`.
-        checker.unify(arg_type, beta, unifiers)
+        checker.unify(arg_type, beta)
 
         # Ensure the `self.fn` refers to a Fn type.
-        checker.unify(fn_type, type_env[self.fn], unifiers)
+        checker.unify(fn_type, checker.type_env[self.fn])
 
         # In case beta's root was changed in the last unification, get it's current root.
-        return unifiers.root_of(beta)
+        return checker.unifiers.root_of(beta)
 
 
 @dataclass

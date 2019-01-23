@@ -1,8 +1,12 @@
-from disjoint_set import DisjointSet
-from utils import pairwise
+from src.disjoint_set import DisjointSet
+from src.utils import pairwise
 
 
 class UnificationError(Exception):
+    pass
+
+
+class RecursiveUnificationError(UnificationError):
     pass
 
 
@@ -53,7 +57,7 @@ class UnifierSet(DisjointSet):
 
 
 if __name__ == "__main__":
-    from typ import *
+    from src.typ import *
 
     u = UnifierSet(Var)
     X, Y, Z = Var("X"), Var("Y"), Var("Z")

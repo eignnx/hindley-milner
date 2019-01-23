@@ -1,4 +1,4 @@
-import unicode as uni
+from src import unicode as uni
 
 
 def fresh_greek_stream():
