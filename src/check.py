@@ -1,3 +1,5 @@
+from typing import Set
+
 from src import typ
 from src import syntax
 from src.unifier_set import UnifierSet, UnificationError, RecursiveUnificationError
@@ -24,7 +26,7 @@ class Checker:
     def __init__(self):
         self.type_env = std_env()
         self.unifiers = UnifierSet(typ.Var)
-        self.non_generic_vars = set()
+        self.non_generic_vars: Set[typ.Var] = set()
 
     def make_non_generic(self, t: typ.Type):
         """
@@ -52,8 +54,12 @@ class Checker:
         Duplicates a type, taking into consideration the genericness and
         non-genericness of type variables.
 
-        If T is a non-generic type, then:
+        If T is a non-generic Var and U is a generic Var, then:
         self.duplicate_type(Fn(T, U, U)) == Fn(T, V, V)
+
+        "In copying a type, we must only copy the generic variables, while the
+        non-generic variables must be shared."
+            -- Luca Cardelli, Basic Polymorphic Typechecking, 1988, pg. 11
 
         :param t:
         :param substitutions:
@@ -90,15 +96,24 @@ class Checker:
 
         if type(t1) is typ.Var:
 
-            if t1 in self.non_generic_vars:
-                self.make_non_generic(t1)
-
             if t1 == t2:
                 return  # Type variables are identical, no need to unify.
             elif self.occurs_in_type(t1, t2):
                 raise RecursiveUnificationError
             else:
+
+                # In unifying a non-generic type variable to a term, all the type
+                # variables contained in that term become non-generic.
+                #   -- Luca Cardelli, Basic Polymorphic Typechecking, 1988, pg. 11
+
+                if t1 in self.non_generic_vars:
+                    self.make_non_generic(t2)
+
+                if type(t2) is typ.Var and t2 in self.non_generic_vars:
+                    self.make_non_generic(t1)
+
                 self.unifiers.unify(t1, t2)
+
         elif isinstance(t1, typ.Poly) and isinstance(t2, typ.Poly):
             if type(t1) is not type(t2):
                 msg = f"Type mismatch: {t1} != {t2}"
