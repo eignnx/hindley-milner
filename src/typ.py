@@ -1,4 +1,5 @@
 from src import unicode as uni
+from src.utils import instance
 
 
 def fresh_greek_stream():
@@ -85,10 +86,6 @@ class Tuple(Poly):
 class Fn(Poly):
     JOIN = uni.ARROW
     SIZE = 2
-
-
-def instance(cls):
-    return cls()
 
 
 @instance

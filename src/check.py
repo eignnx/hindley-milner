@@ -38,18 +38,36 @@ class Checker:
         self.unifiers.add(v)
         return v
 
-    def duplicate_type(self, t: typ.Type) -> typ.Type:
+    def duplicate_type(self, t: typ.Type, substitutions=None) -> typ.Type:
         """
         Duplicates a type, taking into consideration the genericness and
         non-genericness of type variables.
 
         If T is a non-generic type, then:
-        self.duplicate_type(Fn(T, U)) == Fn(T, V)
+        self.duplicate_type(Fn(T, U, U)) == Fn(T, V, V)
 
         :param t:
+        :param substitutions:
         :return:
         """
-        ...
+        substitutions = dict() if substitutions is None else substitutions
+
+        if type(t) is typ.Var:
+            if t in self.non_generic_vars:
+                # Non-generic variables should be shared, not duplicated.
+                return t
+            elif t in substitutions.keys():
+                # Already seen this substitution before. Use previously agreed
+                # upon substitution.
+                return substitutions[t]
+            else:
+                # Create a new substitution
+                substitutions[t] = self.fresh_var()
+                return substitutions[t]
+        elif isinstance(t, typ.Poly):
+            cls = type(t)
+            args = (self.duplicate_type(x, substitutions) for x in t.vals)
+            return cls(*args)
 
     def occurs_in_type(self, t1, t2):
         if t1 == t2:
