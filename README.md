@@ -8,7 +8,7 @@ See [Bodil Stokke's excellent talk](https://www.youtube.com/watch?v=8coUL8G1lFA)
 ```python3
 import src.check as check
 from src.syntax import Const, Ident, Lambda, Call
-from src.typ import Int, Var, Bool, Fn
+from src.typ import Int, Bool, Fn
 
 def test_lambda():
     checker = check.Checker()
@@ -16,7 +16,7 @@ def test_lambda():
     id = Lambda(Ident("x"), Ident("x")) # WIP!
     id_type = id.infer_type(checker)
 
-    T = Var()
+    T = checker.fresh_var()
     equiv_type = Fn(T, T)
     checker.unify(id_type, equiv_type)
     assert True

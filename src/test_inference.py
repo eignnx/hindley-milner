@@ -1,6 +1,6 @@
 import src.check as check
 from src.syntax import Const, Ident, Lambda, Call
-from src.typ import Int, Var, Bool, Fn
+from src.typ import Int, Bool, Fn
 
 
 def test_const():
@@ -25,7 +25,7 @@ def test_lambda():
     id = Lambda(Ident("x"), Ident("x"))
     id_type = id.infer_type(checker)
 
-    T = Var()
+    T = checker.fresh_var()
     equiv_type = Fn(T, T)
     checker.unify(id_type, equiv_type)
     assert True
