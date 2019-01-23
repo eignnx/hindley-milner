@@ -9,12 +9,12 @@ def std_env():
         "zero": typ.Fn(typ.Int, typ.Bool),
         "succ": typ.Fn(typ.Int, typ.Int),
         "pred": typ.Fn(typ.Int, typ.Int),
-        "times": typ.Fn(typ.Int, Fn(typ.Int, typ.Int))
+        "times": typ.Fn(typ.Int, typ.Fn(typ.Int, typ.Int))
     }
 
     T = typ.Var()
     U = typ.Var()
-    std["pair"] = typ.Fn(T, Fn(U, typ.Tuple(T, U)))
+    std["pair"] = typ.Fn(T, typ.Fn(U, typ.Tuple(T, U)))
 
     return std
 
@@ -31,11 +31,9 @@ class Checker:
         else:
             return False
 
-    def unify(self, t1, t2):
-        unifiers = UnifierSet(typ.Var)
-        return self._unify_rec(t1, t2, unifiers)
+    def unify(self, t1, t2, unifiers=None):
+        unifiers = UnifierSet(typ.Var) if unifiers is None else unifiers
 
-    def _unify_rec(self, t1, t2, unifiers):
         if type(t1) is typ.Var:
             if t1 != t2:
                 if not self.occurs_in_type(t1, t2):
@@ -47,7 +45,7 @@ class Checker:
                 # Type variables are identical, no need to unify.
                 return unifiers
         elif isinstance(t1, typ.Poly) and type(t2) is typ.Var:
-            return self._unify_rec(t2, t1, unifiers)  # Swap args and call again
+            return self.unify(t2, t1, unifiers)  # Swap args and call again
         elif isinstance(t1, typ.Poly) and isinstance(t2, typ.Poly):
             if type(t1) is not type(t2):
                 raise UnificationError(f"Type mismatch: {t1} != {t2}")
@@ -56,7 +54,7 @@ class Checker:
                 raise UnificationError(msg)
             else:
                 for x, y in zip(t1.vals, t2.vals):
-                    self._unify_rec(x, y, unifiers)
+                    self.unify(x, y, unifiers)
                 return unifiers
 
 
