@@ -1,15 +1,16 @@
 import typ
 from unifier_set import UnifierSet, UnificationError
 
-def std_env():
-    std = {}
 
-    std["true"] = typ.Bool
-    std["false"] = typ.Bool
-    std["zero"] = typ.Fn(typ.Int, typ.Bool)
-    std["succ"] = typ.Fn(typ.Int, typ.Int)
-    std["pred"] = typ.Fn(typ.Int, typ.Int)
-    std["times"] = typ.Fn(typ.Int, Fn(typ.Int, typ.Int))
+def std_env():
+    std = {
+        "true": typ.Bool,
+        "false": typ.Bool,
+        "zero": typ.Fn(typ.Int, typ.Bool),
+        "succ": typ.Fn(typ.Int, typ.Int),
+        "pred": typ.Fn(typ.Int, typ.Int),
+        "times": typ.Fn(typ.Int, Fn(typ.Int, typ.Int))
+    }
 
     T = typ.Var()
     U = typ.Var()
@@ -46,7 +47,7 @@ class Checker:
                 # Type variables are identical, no need to unify.
                 return unifiers
         elif isinstance(t1, typ.Poly) and type(t2) is typ.Var:
-            return self._unify_rec(t2, t1, unifiers) # Swap args and call again
+            return self._unify_rec(t2, t1, unifiers)  # Swap args and call again
         elif isinstance(t1, typ.Poly) and isinstance(t2, typ.Poly):
             if type(t1) is not type(t2):
                 raise UnificationError(f"Type mismatch: {t1} != {t2}")
@@ -58,8 +59,10 @@ class Checker:
                     self._unify_rec(x, y, unifiers)
                 return unifiers
 
+
 if __name__ == "__main__":
     from typ import *
+
     checker = Checker()
     T = Var("T")
     U = Var("U")

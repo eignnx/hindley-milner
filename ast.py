@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 
+
 class AstNode:
     pass
 
+
 class Value(AstNode):
     pass
+
 
 @dataclass
 class Ident(Value):
@@ -17,6 +20,7 @@ class Ident(Value):
     def __str__(self):
         return self.name
 
+
 @dataclass
 class Const(Value):
     """
@@ -28,21 +32,25 @@ class Const(Value):
     def __str__(self):
         return str(self.value)
 
+
 @dataclass
 class Fn(AstNode):
     arg: Ident
     body: AstNode
+
 
 @dataclass
 class Call(AstNode):
     fn: Fn
     arg: AstNode
 
+
 @dataclass
 class If(AstNode):
     pred: AstNode
     yes: AstNode
     no: AstNode
+
 
 @dataclass
 class Let(AstNode):

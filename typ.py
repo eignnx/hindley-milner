@@ -1,5 +1,5 @@
 import unicode as uni
-import itertools
+
 
 def fresh_greek_stream():
     yield from uni.GREEK_LOWER
@@ -8,17 +8,21 @@ def fresh_greek_stream():
         yield from (f"{ch}{n}" for ch in uni.GREEK_LOWER)
         n += 1
 
+
 greek = fresh_greek_stream()
+
 
 class Type:
     def __eq__(self, other):
         return type(self) is type(other)
+
 
 class Var(Type):
     """
     Represents a type variable.
     α, β, γ
     """
+
     def __init__(self, val=None):
         self.val = val if val is not None else next(greek)
 
@@ -35,6 +39,7 @@ class Var(Type):
 
     def __eq__(self, other):
         return super().__eq__(other) and self.val == other.val
+
 
 class Poly(Type):
     JOIN = None
@@ -69,22 +74,27 @@ class Poly(Type):
 
     def __eq__(self, other):
         return super().__eq__(other) and \
-            len(self.vals) == len(other.vals) and \
-            all(x == y for x, y in zip(self.vals, other.vals))
+               len(self.vals) == len(other.vals) and \
+               all(x == y for x, y in zip(self.vals, other.vals))
+
 
 class Tuple(Poly):
     JOIN = uni.CROSS
+
 
 class Fn(Poly):
     JOIN = uni.ARROW
     SIZE = 2
 
+
 def instance(cls):
     return cls()
+
 
 @instance
 class Int(Poly):
     SIZE = 0
+
 
 @instance
 class Bool(Poly):

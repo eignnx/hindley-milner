@@ -1,8 +1,10 @@
 from disjoint_set import DisjointSet
 from utils import pairwise
 
+
 class UnificationError(Exception):
     pass
+
 
 class UnifierSet(DisjointSet):
     def __init__(self, var_type):
@@ -41,7 +43,7 @@ class UnifierSet(DisjointSet):
             else:
                 self.map[r2] += size1
                 self.map[r1] = r2
-        else: # Both are different concrete objects => error.
+        else:  # Both are different concrete objects => error.
             if r1 != r2:
                 msg = f"Cannot unify concrete types {r1} and {r2}!"
                 raise UnificationError(msg)
@@ -49,8 +51,10 @@ class UnifierSet(DisjointSet):
     def equivalent(self, e1, e2):
         return self.same_set(e1, e2)
 
+
 if __name__ == "__main__":
     from typ import *
+
     u = UnifierSet(Var)
     X, Y, Z = Var("X"), Var("Y"), Var("Z")
     u.unify(X, Y)

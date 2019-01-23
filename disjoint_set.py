@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 from collections import defaultdict
 import utils
+
 
 class DisjointSet:
     def __init__(self):
@@ -29,7 +29,7 @@ class DisjointSet:
         cls_name = self.__class__.__name__
         sets = ", ".join(f"{utils.set_to_str(s)}" for s in self.sets())
         return f"{cls_name}({{ {sets} }})"
-        
+
     def same_set(self, x, *ys):
         assert len(ys) > 0, "`same_set` requires at least two arguments!"
         x_root = self.root_of(x)
@@ -43,7 +43,7 @@ class DisjointSet:
 
     def add(self, e):
         if e not in self.map.keys():
-            self.map[e] = 1 # Root node of tree with size 1.
+            self.map[e] = 1  # Root node of tree with size 1.
 
     def root_of(self, e):
         res = self.map[e]
@@ -52,7 +52,7 @@ class DisjointSet:
         else:
             parent = res
             root = self.root_of(parent)
-            self.map[e] = root # Path compression heuristic.
+            self.map[e] = root  # Path compression heuristic.
             return root
 
     def join(self, e1, e2):
