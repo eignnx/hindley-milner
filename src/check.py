@@ -26,8 +26,17 @@ class Checker:
         self.unifiers = UnifierSet(typ.Var)
         self.non_generic_vars = set()
 
-    def make_non_generic(self, var):
-        self.non_generic_vars.add(var)
+    def make_non_generic(self, t: typ.Type):
+        """
+        Recursively searches for `Var`s in `t`, making them all non-generic.
+        :param t:
+        :return:
+        """
+        if type(t) is typ.Var:
+            self.non_generic_vars.add(t)
+        elif isinstance(t, typ.Poly):
+            for x in t.vals:
+                self.make_non_generic(x)
 
     def fresh_var(self) -> typ.Var:
         """
@@ -80,6 +89,10 @@ class Checker:
     def unify(self, t1: typ.Type, t2: typ.Type) -> None:
 
         if type(t1) is typ.Var:
+
+            if t1 in self.non_generic_vars:
+                self.make_non_generic(t1)
+
             if t1 == t2:
                 return  # Type variables are identical, no need to unify.
             elif self.occurs_in_type(t1, t2):

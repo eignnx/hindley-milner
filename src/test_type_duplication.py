@@ -74,3 +74,17 @@ def test_deep_type_duplication():
     assert n2_inner == n2_outer == N2
     assert g2_inner != G2
     assert i_inner == typ.Int
+
+
+def test_making_compound_type_non_generic():
+    checker = check.Checker()
+    T, U = checker.fresh_var(), checker.fresh_var()
+
+    assert T not in checker.non_generic_vars
+    assert U not in checker.non_generic_vars
+
+    tup = typ.Tuple(T, typ.Int, typ.Tuple(U))
+    checker.make_non_generic(tup)
+
+    assert T in checker.non_generic_vars
+    assert U in checker.non_generic_vars
