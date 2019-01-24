@@ -1,6 +1,6 @@
-import src.check as check
-from src.syntax import Const, Ident, Lambda, Call
-from src.typ import Int, Bool, Fn
+from hindley_milner.src import check
+from hindley_milner.src.syntax import Const, Ident, Lambda, Call
+from hindley_milner.src.typ import Int, Bool, Fn
 
 
 def test_const():

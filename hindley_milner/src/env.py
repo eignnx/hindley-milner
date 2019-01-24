@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, TypeVar
+from typing import Optional, Dict, TypeVar, Generic
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -9,7 +9,7 @@ MISSING = object()
 
 
 @dataclass
-class Env(object):
+class Env(Generic[K, V]):
     parent: Optional[Env] = None
     locals: Dict[K, V] = field(default_factory=dict)
 

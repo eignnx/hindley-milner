@@ -1,5 +1,5 @@
-from src import unicode as uni
-from src.utils import instance
+from hindley_milner.src import unicode as uni
+from hindley_milner.src.utils import instance
 
 
 def fresh_greek_stream():

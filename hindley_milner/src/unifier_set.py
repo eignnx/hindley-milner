@@ -1,5 +1,5 @@
-from src.disjoint_set import DisjointSet
-from src.utils import pairwise
+from hindley_milner.src.disjoint_set import DisjointSet
+from hindley_milner.src.utils import pairwise
 
 
 class UnificationError(Exception):
@@ -57,7 +57,7 @@ class UnifierSet(DisjointSet):
 
 
 if __name__ == "__main__":
-    from src.typ import *
+    from hindley_milner.src.typ import *
 
     u = UnifierSet(Var)
     X, Y, Z = Var("X"), Var("Y"), Var("Z")

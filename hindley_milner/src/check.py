@@ -1,34 +1,37 @@
+from contextlib import contextmanager
 from typing import Set
 
-from src import typ
-from src import syntax
-from src.unifier_set import UnifierSet, UnificationError, RecursiveUnificationError
-
-
-def std_env():
-    std = {
-        syntax.Ident("true"): typ.Bool,
-        syntax.Ident("false"): typ.Bool,
-        syntax.Ident("zero"): typ.Fn(typ.Int, typ.Bool),
-        syntax.Ident("succ"): typ.Fn(typ.Int, typ.Int),
-        syntax.Ident("pred"): typ.Fn(typ.Int, typ.Int),
-        syntax.Ident("times"): typ.Fn(typ.Int, typ.Fn(typ.Int, typ.Int))
-    }
-
-    T = typ.Var()
-    U = typ.Var()
-    std[syntax.Ident("pair")] = typ.Fn(T, typ.Fn(U, typ.Tuple(T, U)))
-
-    return std
+from hindley_milner.src import env
+from hindley_milner.src import syntax, typ
+from hindley_milner.src import std_env
+from hindley_milner.src.unifier_set import UnifierSet, UnificationError, RecursiveUnificationError
 
 
 class Checker:
     def __init__(self):
-        self.type_env = std_env()
+        self.type_env: std_env.StdEnv = std_env.std_env()
         self.unifiers = UnifierSet(typ.Var)
         self.non_generic_vars: Set[typ.Var] = set()
 
-    def make_non_generic(self, t: typ.Type):
+    @contextmanager
+    def new_scope(self) -> None:
+        """
+        A context manager for typechecking inside a nested scope.
+
+        Example:
+        >>> checker = Checker()
+        >>> x = syntax.Ident("x")
+        >>> checker.type_env[x] = 333
+        >>> with checker.new_scope():
+        ...     checker.type_env[x] = 555
+        ...     assert checker.type_env[x] == 555
+        >>> assert checker.type_env[x] == 333
+        """
+        self.type_env = env.Env(self.type_env)
+        yield
+        self.type_env = self.type_env.parent
+
+    def make_non_generic(self, t: typ.Type) -> None:
         """
         Recursively searches for `Var`s in `t`, making them all non-generic.
         :param t:
@@ -102,8 +105,8 @@ class Checker:
                 raise RecursiveUnificationError
             else:
 
-                # In unifying a non-generic type variable to a term, all the type
-                # variables contained in that term become non-generic.
+                # "In unifying a non-generic type variable to a term, all the type
+                # variables contained in that term become non-generic."
                 #   -- Luca Cardelli, Basic Polymorphic Typechecking, 1988, pg. 11
 
                 if t1 in self.non_generic_vars:

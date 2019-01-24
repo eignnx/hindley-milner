@@ -1,5 +1,5 @@
 from collections import defaultdict
-from src import utils
+from hindley_milner.src import utils
 
 
 class DisjointSet:

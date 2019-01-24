@@ -3,10 +3,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
-from src import check
-from src.typ import Type, Fn, Var
+from hindley_milner.src import check
+from hindley_milner.src.typ import Type, Fn, Var
 
 
+# TODO: Impl `infer_type` for all subclasses of `AstNode`.
 class AstNode(ABC):
     @abstractmethod
     def infer_type(self, checker: check.Checker) -> Type:
@@ -59,7 +60,7 @@ class Lambda(AstNode):
     def infer_type(self, checker: check.Checker) -> Type:
         arg_type = Var()
         checker.unifiers.add(arg_type)
-        checker.type_env[self.arg] = arg_type
+        checker.type_env[self.arg] = arg_type  # TODO: Create new Env for lambda body.
         body_type = self.body.infer_type(checker)
 
         # After inferring body's type, arg type might be known.

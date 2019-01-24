@@ -1,8 +1,8 @@
 import pytest
 
-from src.check import Checker
-from src.typ import *
-from src.unifier_set import UnificationError
+from hindley_milner.src.check import Checker
+from hindley_milner.src.typ import *
+from hindley_milner.src.unifier_set import UnificationError
 
 
 def test_var_unification():

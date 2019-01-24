@@ -1,4 +1,5 @@
-from src import check, typ
+from hindley_milner.src import check
+from hindley_milner.src import typ
 
 
 def test_generic_var_duplication():
