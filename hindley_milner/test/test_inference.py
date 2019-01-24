@@ -1,5 +1,5 @@
 from hindley_milner.src import check
-from hindley_milner.src.syntax import Const, Ident, Lambda, Call
+from hindley_milner.src.syntax import Const, Ident, Lambda, Call, Let
 from hindley_milner.src.typ import Int, Bool, Fn
 
 
@@ -38,6 +38,14 @@ def test_call():
     checker.type_env[Ident("id")] = id.infer_type(checker)
 
     call = Call(Ident("id"), Const(3, Int))
-    assert call.infer_type(checker) == Int
+    assert checker.unifiers.equivalent(call.infer_type(checker), Int)
+
+
+def test_let():
+    checker = check.Checker()
+
+    x = Ident("x")
+    let = Let(x, Const(3, Int), x)
+    assert checker.unifiers.equivalent(let.infer_type(checker), Int)
 
 

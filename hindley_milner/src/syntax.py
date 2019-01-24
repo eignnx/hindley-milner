@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 from hindley_milner.src import check
-from hindley_milner.src.typ import Type, Fn, Var
+from hindley_milner.src.typ import Type, Fn, Var, Bool
 
 
 # TODO: Impl `infer_type` for all subclasses of `AstNode`.
@@ -14,7 +14,7 @@ class AstNode(ABC):
         pass
 
 
-class Value(AstNode):
+class Value(AstNode, ABC):
     pass
 
 
@@ -52,16 +52,19 @@ class Const(Value):
 @dataclass
 class Lambda(AstNode):
     """
-    lambda arg: body
+    lambda param: body
     """
-    arg: Ident
+    param: Ident
     body: AstNode
 
     def infer_type(self, checker: check.Checker) -> Type:
-        arg_type = Var()
-        checker.unifiers.add(arg_type)
-        checker.type_env[self.arg] = arg_type  # TODO: Create new Env for lambda body.
-        body_type = self.body.infer_type(checker)
+
+        # In a new scope, infer the type of the body.
+        with checker.new_scope():
+            # Parameter types are non-generic
+            arg_type = checker.fresh_var(non_generic=True)
+            checker.type_env[self.param] = arg_type
+            body_type = self.body.infer_type(checker)
 
         # After inferring body's type, arg type might be known.
         arg_type = checker.unifiers.root_of(arg_type)
@@ -84,14 +87,14 @@ class Call(AstNode):
         beta = checker.fresh_var()
         fn_type = Fn(alpha, beta)
 
+        # Ensure the `self.fn` refers to a Fn type.
+        checker.unify(fn_type, checker.type_env[self.fn])
+
         # Get best guess as to the type of `self.arg`.
         arg_type = self.arg.infer_type(checker)
 
         # Link that best guess with the new type variable `beta`.
         checker.unify(arg_type, beta)
-
-        # Ensure the `self.fn` refers to a Fn type.
-        checker.unify(fn_type, checker.type_env[self.fn])
 
         # In case beta's root was changed in the last unification, get it's current root.
         return checker.unifiers.root_of(beta)
@@ -106,6 +109,16 @@ class If(AstNode):
     yes: AstNode
     no: AstNode
 
+    def infer_type(self, checker: check.Checker) -> Type:
+        pred_type = self.pred.infer_type(checker)
+        checker.unify(pred_type, Bool)
+
+        yes_type = self.yes.infer_type(checker)
+        no_type = self.no.infer_type(checker)
+        checker.unify(yes_type, no_type)
+
+        return yes_type
+
 
 @dataclass
 class Let(AstNode):
@@ -115,3 +128,20 @@ class Let(AstNode):
     left: Ident
     right: AstNode
     body: AstNode
+
+    def infer_type(self, checker: check.Checker) -> Type:
+        with checker.new_scope():
+
+            # First, bind `left` to a fresh type variable. This allows
+            # for recursive let statements.
+            alpha = checker.fresh_var()
+            checker.type_env[self.left] = alpha
+
+            # Next infer the type of `right` using the binding just created.
+            right_type = self.right.infer_type(checker)
+
+            # Link the type variable with the inferred type of `right`.
+            checker.unify(alpha, right_type)
+
+            # With the environment set up, now the body can be typechecked.
+            return self.body.infer_type(checker)

@@ -43,13 +43,15 @@ class Checker:
             for x in t.vals:
                 self.make_non_generic(x)
 
-    def fresh_var(self) -> typ.Var:
+    def fresh_var(self, non_generic=False) -> typ.Var:
         """
         A Var should always be added to the global UnifierSet whenever it's
-        created. Returns a non-generic type variable.
+        created. Returns a non-generic type variable unless otherwise specified.
         """
         v = typ.Var()
         self.unifiers.add(v)
+        if non_generic:
+            self.non_generic_vars.add(v)
         return v
 
     def duplicate_type(self, t: typ.Type, substitutions=None) -> typ.Type:
