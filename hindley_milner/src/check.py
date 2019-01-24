@@ -9,9 +9,9 @@ from hindley_milner.src.unifier_set import UnifierSet, UnificationError, Recursi
 
 class Checker:
     def __init__(self):
-        self.type_env: std_env.StdEnv = std_env.std_env()
         self.unifiers = UnifierSet(typ.Var)
         self.non_generic_vars: Set[typ.Var] = set()
+        self.type_env: std_env.StdEnv = std_env.std_env(self)
 
     @contextmanager
     def new_scope(self) -> None:
