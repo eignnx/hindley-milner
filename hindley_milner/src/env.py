@@ -10,13 +10,13 @@ MISSING = object()
 
 @dataclass
 class Env(Generic[K, V]):
-    parent: Optional[Env] = None
+    parent: Optional[Env[K, V]] = None
     locals: Dict[K, V] = field(default_factory=dict)
 
     def __setitem__(self, key: K, value: V):
         self.locals[key] = value
 
-    def __getitem__(self, key: K):
+    def __getitem__(self, key: K) -> V:
         res = self.locals.get(key, MISSING)
         if res is not MISSING:
             return res
