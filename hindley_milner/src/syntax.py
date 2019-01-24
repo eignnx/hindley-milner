@@ -77,7 +77,7 @@ class Call(AstNode):
     """
     fn(arg)
     """
-    fn: Ident
+    fn: AstNode
     arg: AstNode
 
     def infer_type(self, checker: check.Checker) -> Type:
@@ -88,7 +88,7 @@ class Call(AstNode):
         fn_type = Fn(alpha, beta)
 
         # Ensure the `self.fn` refers to a Fn type.
-        checker.unify(fn_type, checker.type_env[self.fn])
+        checker.unify(fn_type, self.fn.infer_type(checker))
 
         # Get best guess as to the type of `self.arg`.
         arg_type = self.arg.infer_type(checker)
