@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Set
 
-from hindley_milner.src import env
+from hindley_milner.src import env, utils
 from hindley_milner.src import syntax, typ
 from hindley_milner.src import std_env
 from hindley_milner.src.unifier_set import UnifierSet, UnificationError, RecursiveUnificationError
@@ -9,6 +9,7 @@ from hindley_milner.src.unifier_set import UnifierSet, UnificationError, Recursi
 
 class Checker:
     def __init__(self):
+        self._fresh_var_names = utils.fresh_greek_stream()
         self.unifiers = UnifierSet(typ.Var)
         self.non_generic_vars: Set[typ.Var] = set()
         self.type_env: std_env.StdEnv = std_env.std_env(self)
@@ -48,7 +49,7 @@ class Checker:
         A Var should always be added to the global UnifierSet whenever it's
         created. Returns a non-generic type variable unless otherwise specified.
         """
-        v = typ.Var()
+        v = typ.Var(next(self._fresh_var_names))
         self.unifiers.add(v)
         if non_generic:
             self.non_generic_vars.add(v)

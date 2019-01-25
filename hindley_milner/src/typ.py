@@ -1,16 +1,5 @@
-from hindley_milner.src import unicode as uni
+from hindley_milner.src import unicode
 from hindley_milner.src.utils import instance
-
-
-def fresh_greek_stream():
-    yield from uni.GREEK_LOWER
-    n = 1
-    while True:
-        yield from (f"{ch}{n}" for ch in uni.GREEK_LOWER)
-        n += 1
-
-
-greek = fresh_greek_stream()
 
 
 class Type:
@@ -24,8 +13,8 @@ class Var(Type):
     α, β, γ
     """
 
-    def __init__(self, val=None):
-        self.val = val if val is not None else next(greek)
+    def __init__(self, val):
+        self.val = val
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -80,11 +69,11 @@ class Poly(Type):
 
 
 class Tuple(Poly):
-    JOIN = uni.CROSS
+    JOIN = unicode.CROSS
 
 
 class Fn(Poly):
-    JOIN = uni.ARROW
+    JOIN = unicode.ARROW
     SIZE = 2
 
 

@@ -1,4 +1,15 @@
 from itertools import tee
+from typing import Iterator
+
+from hindley_milner.src import unicode
+
+
+def fresh_greek_stream() -> Iterator[str]:
+    yield from unicode.GREEK_LOWER
+    n = 1
+    while True:
+        yield from (f"{ch}{n}" for ch in unicode.GREEK_LOWER)
+        n += 1
 
 
 def pairwise(seq):
