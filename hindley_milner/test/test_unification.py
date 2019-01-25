@@ -5,6 +5,16 @@ from hindley_milner.src.typ import *
 from hindley_milner.src.unifier_set import UnificationError
 
 
+def test_concrete_atom_unification():
+    checker = Checker()
+    checker.unify(Int, Int)
+
+
+def test_concrete_poly_unification():
+    checker = Checker()
+    checker.unify(Tuple(Int, Bool), Tuple(Int, Bool))
+
+
 def test_var_unification():
     checker = Checker()
     T = checker.fresh_var()
