@@ -72,6 +72,15 @@ class Tuple(Poly):
     JOIN = unicode.CROSS
 
 
+class List(Poly):
+    JOIN = None
+    SIZE = 1
+
+    def __str__(self):
+        [val] = self.vals
+        return f"(list {val})"
+
+
 class Fn(Poly):
     JOIN = unicode.ARROW
     SIZE = 2
