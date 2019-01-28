@@ -1,3 +1,5 @@
+import typing
+
 from hindley_milner.src import check
 from hindley_milner.src import typ
 
@@ -10,8 +12,7 @@ def test_generic_var_duplication():
 
 def test_non_generic_var_duplication():
     checker = check.Checker()
-    T = checker.fresh_var()
-    checker.make_non_generic(T)
+    T = checker.fresh_var(non_generic=True)
     assert checker.duplicate_type(T) == T
 
 
@@ -25,13 +26,13 @@ def test_compound_type_with_type_vars():
     checker = check.Checker()
 
     generic = checker.fresh_var()
-    non_generic = checker.fresh_var()
-    checker.make_non_generic(non_generic)
+    non_generic = checker.fresh_var(non_generic=True)
 
     tup = typ.Tuple(non_generic, non_generic, generic, generic)
     actual = checker.duplicate_type(tup)
 
     assert type(actual) is typ.Tuple
+    actual = typing.cast(typ.Tuple, actual)
 
     a, b, c, d = actual.vals
 
@@ -48,16 +49,14 @@ def test_deep_type_duplication():
 
     G1 = checker.fresh_var()
     G2 = checker.fresh_var()
-    N1 = checker.fresh_var()
-    N2 = checker.fresh_var()
-
-    checker.make_non_generic(N1)
-    checker.make_non_generic(N2)
+    N1 = checker.fresh_var(non_generic=True)
+    N2 = checker.fresh_var(non_generic=True)
 
     orig = typ.Tuple(G1, N1, N1, N2, typ.Tuple(G1, N1, N2, G2, typ.Int), typ.Int)
     duplicated = checker.duplicate_type(orig)
 
     assert type(duplicated) is typ.Tuple
+    duplicated = typing.cast(typ.Tuple, duplicated)
 
     g1_outer, n1_outer_1, n1_outer_2, n2_outer, tup, i_outer = duplicated.vals
 
@@ -81,11 +80,11 @@ def test_making_compound_type_non_generic():
     checker = check.Checker()
     T, U = checker.fresh_var(), checker.fresh_var()
 
-    assert T not in checker.non_generic_vars
-    assert U not in checker.non_generic_vars
+    assert checker.is_generic(T)
+    assert checker.is_generic(U)
 
     tup = typ.Tuple(T, typ.Int, typ.Tuple(U))
-    checker.make_non_generic(tup)
+    checker.unifiers.make_non_generic(tup)
 
-    assert T in checker.non_generic_vars
-    assert U in checker.non_generic_vars
+    assert checker.is_non_generic(T)
+    assert checker.is_non_generic(U)

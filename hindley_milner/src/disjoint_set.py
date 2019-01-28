@@ -62,6 +62,9 @@ class DisjointSet:
         self.join_roots(r1, r2)
 
     def join_roots(self, r1, r2):
+        """
+        Assumes r1 and r2 are roots.
+        """
         size1, size2 = self.map[r1], self.map[r2]
 
         # Weighting heuristic.

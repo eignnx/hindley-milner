@@ -1,3 +1,6 @@
+from typing import Set
+
+from hindley_milner.src import typ, utils
 from hindley_milner.src.disjoint_set import DisjointSet
 from hindley_milner.src.utils import pairwise
 
@@ -11,35 +14,85 @@ class RecursiveUnificationError(UnificationError):
 
 
 class UnifierSet(DisjointSet):
-    def __init__(self, var_type):
+    def __init__(self):
         super().__init__()
-        self.var_type = var_type
+        self._fresh_var_names = utils.fresh_greek_stream()
+        self.non_generic_vars: Set[typ.Var] = set()
 
-    def unify(self, *e):
-        for e1, e2 in pairwise(e):
-            self._unify2(e1, e2)
+    def fresh_var(self, non_generic=False) -> typ.Var:
+        """
+        A Var should always be added to the global UnifierSet whenever it's
+        created. Returns a non-generic type variable unless otherwise specified.
+        """
+        v = typ.Var(next(self._fresh_var_names))
+        self.add(v)
+        if non_generic:
+            self.non_generic_vars.add(v)
+        return v
 
-    def _unify2(self, e1, e2):
-        if e1 not in self.map: self.add(e1)
-        if e2 not in self.map: self.add(e2)
-        r1 = self.root_of(e1)
-        r2 = self.root_of(e2)
-        self.join_roots(r1, r2)
+    def occurs_in_type(self, t1, t2):
+        if t1 == t2:
+            return True
+        elif isinstance(t2, typ.Poly):
+            return any(self.occurs_in_type(t1, t) for t in t2.vals)
+        else:
+            return False
+
+    def unify(self, *ts: typ.Type):
+        for t1, t2 in pairwise(ts):
+            self._unify2(t1, t2)
+
+    def _unify2(self, t1: typ.Type, t2: typ.Type):
+
+        if type(t1) is typ.Var:
+
+            # Ensure they're both in the DisjointSet.
+            self.add(t1)
+            self.add(t2)
+
+            # "In unifying a non-generic type variable to a term, all the type
+            # variables contained in that term become non-generic."
+            #   -- Luca Cardelli, Basic Polymorphic Typechecking, 1988, pg. 11
+
+            if self.is_non_generic(t1):
+                self.make_non_generic(t2)
+
+            if type(t2) is typ.Var and self.is_non_generic(t2):
+                self.make_non_generic(t1)
+
+            if t1 == t2:
+                return  # Type variables are identical, no need to unify.
+            elif self.occurs_in_type(t1, t2):
+                raise RecursiveUnificationError
+            else:
+                self.join(t1, t2)
+
+        elif isinstance(t1, typ.Poly) and isinstance(t2, typ.Poly):
+            if type(t1) is not type(t2):
+                msg = f"Type mismatch: {t1} != {t2}"
+                raise UnificationError(msg)
+            elif len(t1.vals) != len(t2.vals):
+                msg = f"Type mismatch: {t1} has different arity than {t2}!"
+                raise UnificationError(msg)
+            else:
+                for x, y in zip(t1.vals, t2.vals):
+                    self.unify(x, y)
+
+        elif isinstance(t1, typ.Poly) and type(t2) is typ.Var:
+            return self.unify(t2, t1)  # Swap args and call again
 
     def join_roots(self, r1, r2):
         size1, size2 = self.map[r1], self.map[r2]
-        r1_is_var = isinstance(r1, self.var_type)
-        r2_is_var = isinstance(r2, self.var_type)
 
-        if r1_is_var and not r2_is_var:
+        if type(r1) is typ.Var and type(r2) is not typ.Var:
             # `r2` is something concrete, make it the root.
             self.map[r2] += size1
             self.map[r1] = r2
-        elif r2_is_var and not r1_is_var:
+        elif type(r2) is typ.Var and type(r1) is not typ.Var:
             # `r1` is something concrete, make it the root.
             self.map[r1] += size2
             self.map[r2] = r1
-        elif r2_is_var and r1_is_var:
+        elif type(r1) is typ.Var and type(r2) is typ.Var:
             # Use weighting heuristic to keep it fast.
             if size1 > size2:
                 self.map[r1] += size2
@@ -47,13 +100,25 @@ class UnifierSet(DisjointSet):
             else:
                 self.map[r2] += size1
                 self.map[r1] = r2
-        else:  # Both are different concrete objects => error.
-            if r1 != r2:
-                msg = f"Cannot unify concrete types {r1} and {r2}!"
+        else:
+            if type(r1) is not type(r2):
+                msg = f"Type mismatch: {r1} != {r2}"
                 raise UnificationError(msg)
+            else:
+                self.unify(r1, r2)
 
-    def equivalent(self, e1, e2):
-        return self.same_set(e1, e2)
+    def make_non_generic(self, t: typ.Type) -> None:
+        """
+        Recursively searches for `Var`s in `t`, making them all non-generic.
+        """
+        if type(t) is typ.Var:
+            self.non_generic_vars.add(t)
+        elif isinstance(t, typ.Poly):
+            for x in t.vals:
+                self.make_non_generic(x)
+
+    def is_non_generic(self, v):
+        return v in self.non_generic_vars
 
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ def test_call():
     checker.type_env[Ident("id")] = id.infer_type(checker)
 
     call = Call(Ident("id"), Const(3, Int))
-    assert checker.unifiers.equivalent(call.infer_type(checker), Int)
+    assert call.infer_type(checker) == Int
 
 
 def test_simple_let():
@@ -49,7 +49,7 @@ def test_simple_let():
 
     x = Ident("x")
     let = Let(x, Const(3, Int), x)
-    assert checker.unifiers.equivalent(let.infer_type(checker), Int)
+    assert checker.unifiers.same_set(let.infer_type(checker), Int)
 
 
 def test_complex_let():
@@ -73,7 +73,7 @@ def test_complex_let():
     let = Let(f, fn, pair_call)
 
     inferred = let.infer_type(checker)
-    assert checker.unifiers.equivalent(inferred, Tuple(Int, Bool))
+    checker.unify(inferred, Tuple(Int, Bool))
 
 
 def test_length_fn():
@@ -107,4 +107,5 @@ def test_length_fn():
     body = Call(length, Const([True], List(Bool)))
     let = Let(length, fn, body)
 
-    print(let.infer_type(checker))
+    inferred = let.infer_type(checker)
+    assert checker.unifiers.same_set(inferred, Int)

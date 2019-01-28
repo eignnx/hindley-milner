@@ -58,38 +58,32 @@ def test_basic_generic_non_generic_unification():
     checker = Checker()
 
     generic = checker.fresh_var()
-    non_generic = checker.fresh_var()
-
-    checker.make_non_generic(non_generic)
+    non_generic = checker.fresh_var(non_generic=True)
 
     checker.unify(generic, non_generic)
 
-    assert generic in checker.non_generic_vars
+    assert checker.is_non_generic(generic)
 
 
 def test_basic_generic_non_generic_unification_reversed():
     checker = Checker()
 
     generic = checker.fresh_var()
-    non_generic = checker.fresh_var()
-
-    checker.make_non_generic(non_generic)
+    non_generic = checker.fresh_var(non_generic=True)
 
     checker.unify(non_generic, generic)
 
-    assert generic in checker.non_generic_vars
+    assert checker.is_non_generic(generic)
 
 
 def test_complex_generic_non_generic_unification():
     checker = Checker()
 
     generic = checker.fresh_var()
-    non_generic = checker.fresh_var()
-
-    checker.make_non_generic(non_generic)
+    non_generic = checker.fresh_var(non_generic=True)
 
     t = Tuple(generic)
     checker.unify(non_generic, t)
 
-    assert generic in checker.non_generic_vars
+    assert checker.is_non_generic(generic)
 
