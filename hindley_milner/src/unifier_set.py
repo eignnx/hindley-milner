@@ -116,13 +116,16 @@ class UnifierSet(DisjointSet):
     def is_non_generic(self, v):
         return v in self.non_generic_vars
 
+    def get_concrete(self, t: typ.Type) -> typ.Type:
+        if type(t) is typ.Var:
+            r = self.root_of(t)
+            if r == t:
+                return r
+            else:
+                return self.get_concrete(r)
+        elif isinstance(t, typ.Poly):
+            cls = type(t)
+            vals = (self.get_concrete(v) for v in t.vals)
+            return cls(*vals)
 
-if __name__ == "__main__":
-    from hindley_milner.src.typ import *
 
-    u = UnifierSet(Var)
-    X, Y, Z = Var("X"), Var("Y"), Var("Z")
-    u.unify(X, Y)
-    u.unify(Z, Int)
-    u.unify(Y, Bool)
-    print(u)
