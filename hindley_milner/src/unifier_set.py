@@ -38,11 +38,7 @@ class UnifierSet(DisjointSet):
         else:
             return False
 
-    def unify(self, *ts: typ.Type):
-        for t1, t2 in pairwise(ts):
-            self._unify2(t1, t2)
-
-    def _unify2(self, t1: typ.Type, t2: typ.Type):
+    def unify(self, t1: typ.Type, t2: typ.Type):
 
         if type(t1) is typ.Var:
 
