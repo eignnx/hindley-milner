@@ -7,7 +7,6 @@ from hindley_milner.src import check
 from hindley_milner.src.typ import Type, Fn, Var, Bool
 
 
-# TODO: Impl `infer_type` for all subclasses of `AstNode`.
 class AstNode(ABC):
     @abstractmethod
     def infer_type(self, checker: check.Checker) -> Type:
@@ -85,16 +84,18 @@ class Call(AstNode):
         # Set up a function type.
         alpha = checker.fresh_var()
         beta = checker.fresh_var()
-        fn_type = Fn(alpha, beta)
+        fn_type_joiner = Fn(alpha, beta)
 
         # Ensure the `self.fn` refers to a Fn type.
-        checker.unify(fn_type, self.fn.infer_type(checker))
+        fn_type = self.fn.infer_type(checker)
+        fn_type_instance = checker.duplicate_type(fn_type)
+        checker.unify(fn_type_instance, fn_type_joiner)
 
         # Get best guess as to the type of `self.arg`.
         arg_type = self.arg.infer_type(checker)
 
-        # Link that best guess with the new type variable `beta`.
-        checker.unify(arg_type, beta)
+        # Link that best guess with the new type variable `alpha`.
+        checker.unify(arg_type, alpha)
 
         # In case beta's root was changed in the last unification, get it's current root.
         return checker.unifiers.root_of(beta)
