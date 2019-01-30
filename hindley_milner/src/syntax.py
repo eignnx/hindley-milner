@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 from hindley_milner.src import check
-from hindley_milner.src.typ import Type, Fn, Var, Bool
+from hindley_milner.src.typ import Type, Fn, Bool
 
 
 class AstNode(ABC):
@@ -62,7 +62,7 @@ class Lambda(AstNode):
         # Scoped because `self.param` is valid only inside this scope.
         with checker.new_scope():
             with checker.scoped_non_generic() as arg_type:
-                # Parameter types are non-generic when checking the body.
+                # Parameter types are non-generic while checking the body.
                 checker.type_env[self.param] = arg_type
                 body_type = self.body.infer_type(checker)
 
@@ -94,7 +94,8 @@ class Call(AstNode):
 
         checker.unify(fn_type, fn_type_joiner)
 
-        # In case beta's root was changed in the last unification, get it's current root.
+        # In case beta's root was changed in the last unification, get it's
+        # current root.
         return checker.unifiers.get_concrete(beta)
 
 
@@ -128,10 +129,13 @@ class Let(AstNode):
     body: AstNode
 
     def infer_type(self, checker: check.Checker) -> Type:
+
+        # Scope the `left = right` binding.
         with checker.new_scope():
 
             # First, bind `left` to a fresh type variable. This allows
             # for recursive let statements.
+            # Note: `alpha` is only non-generic while inferring `right`. TODO: Why tho?
             with checker.scoped_non_generic() as alpha:
                 checker.type_env[self.left] = alpha
 

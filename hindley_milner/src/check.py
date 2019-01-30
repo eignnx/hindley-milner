@@ -33,14 +33,21 @@ class Checker:
         >>> assert checker.type_env[x] == 333
         """
         self.type_env = env.Env(parent=self.type_env)
-        # tmp = self.unifiers.non_generic_vars
-        # self.unifiers.non_generic_vars = {x for x in tmp}
         yield
         self.type_env = self.type_env.parent
-        # self.unifiers.non_generic_vars = tmp
 
     @contextmanager
     def scoped_non_generic(self) -> typ.Var:
+        """
+        A context manager that yields a fresh type variable that is
+        non-generic only inside the scope of the with-block.
+
+        Example:
+        >>> checker = Checker()
+        >>> with checker.scoped_non_generic() as alpha:
+        ...     assert checker.is_non_generic(alpha)
+        >>> assert checker.is_generic(alpha)
+        """
         alpha = self.fresh_var(non_generic=True)
         yield alpha
         self.unifiers.make_generic(alpha)
