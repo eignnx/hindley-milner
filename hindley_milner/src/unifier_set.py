@@ -2,7 +2,6 @@ from typing import Set
 
 from hindley_milner.src import typ, utils
 from hindley_milner.src.disjoint_set import DisjointSet
-from hindley_milner.src.utils import pairwise
 
 
 class UnificationError(Exception):
@@ -117,6 +116,20 @@ class UnifierSet(DisjointSet):
         return v in self.non_generic_vars
 
     def get_concrete(self, t: typ.Type) -> typ.Type:
+        """
+        Recursively builds up a type by replacing all known `Var`s with the
+        concrete types they refer to.
+
+        Ex:
+            If T has been unified with Int:
+                self.get_concrete(T) -> Int.
+
+            If T has been unified with Int:
+                self.get_concrete(Tuple(T)) -> Tuple(Int).
+
+        :param t:
+        :return:
+        """
         if type(t) is typ.Var:
             r = self.root_of(t)
             if r == t:
