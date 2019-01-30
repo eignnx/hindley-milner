@@ -1,9 +1,15 @@
+import pytest
+
 from hindley_milner.src import check
 from hindley_milner.src.syntax import Const, Ident, Lambda, Call, Let, If
 from hindley_milner.src.typ import Int, Bool, Fn, Tuple, List
+from hindley_milner.src.unifier_set import UnificationError
 
 
 def test_const():
+    """
+    3 : int
+    """
     checker = check.Checker()
     three = Const(3, Int)
     assert three.infer_type(checker) == Int
@@ -13,6 +19,9 @@ def test_const():
 
 
 def test_ident():
+    """
+    x : int
+    """
     checker = check.Checker()
     x = Ident("x")
     checker.type_env[x] = Int
@@ -20,6 +29,9 @@ def test_ident():
 
 
 def test_lambda():
+    """
+    fun(x) x : t -> t
+    """
     checker = check.Checker()
 
     id = Lambda(Ident("x"), Ident("x"))
@@ -31,7 +43,37 @@ def test_lambda():
     assert True
 
 
-def test_call():
+def test_lambda_zero():
+    """
+    fun(x) zero(x) : int -> bool
+    """
+    checker = check.Checker()
+
+    fn = Lambda(Ident("x"), Call(Ident("zero"), Ident("x")))
+    fn_type = fn.infer_type(checker)
+
+    assert checker.unifiers.get_concrete(fn_type) == Fn(Int, Bool)
+
+
+def test_simple_call():
+    """
+    pair(3)(true) : (int x bool)
+    """
+    checker = check.Checker()
+
+    three = Const(3, Int)
+    true = Const(True, Bool)
+    pair = Ident("pair")
+    call = Call(Call(pair, three), true)
+
+    assert checker.unifiers.get_concrete(call.infer_type(checker)) == Tuple(Int, Bool)
+
+
+def test_instantiation_call():
+    """
+    define id = fun(x) x;
+    id(3) : int
+    """
     checker = check.Checker()
 
     id = Lambda(Ident("x"), Ident("x"))
@@ -52,6 +94,26 @@ def test_simple_let():
     assert checker.unifiers.get_concrete(let.infer_type(checker)) == Int
 
 
+def test_bad_application():
+    """
+    fun(f) pair( f(3) )( f(true) ) : [type error]
+    """
+    checker = check.Checker()
+
+    f = Ident("f")
+    three = Const(3, Int)
+    true = Const(True, Bool)
+    pair = Ident("pair")  # From std_env.
+
+    f_of_3 = Call(f, three)
+    f_of_true = Call(f, true)
+    pair_call = Call(Call(pair, f_of_3), f_of_true)
+    fn = Lambda(f, pair_call)
+
+    with pytest.raises(UnificationError):
+        fn.infer_type(checker)
+
+
 def test_complex_let():
     """
     let f = fun(a) a
@@ -65,11 +127,12 @@ def test_complex_let():
     true = Const(True, Bool)
     pair = Ident("pair")  # From std_env.
 
+    fn = Lambda(a, a)
+
     f_of_3 = Call(f, three)
     f_of_true = Call(f, true)
     pair_call = Call(Call(pair, f_of_3), f_of_true)
 
-    fn = Lambda(a, a)
     let = Let(f, fn, pair_call)
 
     inferred = let.infer_type(checker)

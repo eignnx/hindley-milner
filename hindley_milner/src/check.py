@@ -32,9 +32,18 @@ class Checker:
         ...     assert checker.type_env[x] == 555
         >>> assert checker.type_env[x] == 333
         """
-        self.type_env = env.Env(self.type_env)
+        self.type_env = env.Env(parent=self.type_env)
+        # tmp = self.unifiers.non_generic_vars
+        # self.unifiers.non_generic_vars = {x for x in tmp}
         yield
         self.type_env = self.type_env.parent
+        # self.unifiers.non_generic_vars = tmp
+
+    @contextmanager
+    def scoped_non_generic(self) -> typ.Var:
+        alpha = self.fresh_var(non_generic=True)
+        yield alpha
+        self.unifiers.make_generic(alpha)
 
     def fresh_var(self, non_generic=False) -> typ.Var:
         return self.unifiers.fresh_var(non_generic)
@@ -56,6 +65,10 @@ class Checker:
         :return:
         """
         substitutions = dict() if substitutions is None else substitutions
+
+        # If t = Var("a") and Var("a") is unified with Tuple(x, y), duplicate
+        # the Tuple, not the Var.
+        t = self.unifiers.get_concrete(t)
 
         if type(t) is typ.Var:
             if self.is_non_generic(t):

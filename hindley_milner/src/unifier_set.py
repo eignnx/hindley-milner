@@ -141,4 +141,7 @@ class UnifierSet(DisjointSet):
             vals = (self.get_concrete(v) for v in t.vals)
             return cls(*vals)
 
+    def make_generic(self, v: typ.Var):
+        self.non_generic_vars.remove(v)
+
 

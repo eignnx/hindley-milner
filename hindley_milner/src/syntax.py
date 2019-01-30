@@ -26,7 +26,7 @@ class Ident(Value):
     name: str
 
     def infer_type(self, checker: check.Checker) -> Type:
-        return checker.type_env[self]
+        return checker.duplicate_type(checker.type_env[self])
 
     def __str__(self):
         return self.name
@@ -59,14 +59,15 @@ class Lambda(AstNode):
     def infer_type(self, checker: check.Checker) -> Type:
 
         # In a new scope, infer the type of the body.
+        # Scoped because `self.param` is valid only inside this scope.
         with checker.new_scope():
-            # Parameter types are non-generic
-            arg_type = checker.fresh_var(non_generic=True)
-            checker.type_env[self.param] = arg_type
-            body_type = self.body.infer_type(checker)
+            with checker.scoped_non_generic() as arg_type:
+                # Parameter types are non-generic when checking the body.
+                checker.type_env[self.param] = arg_type
+                body_type = self.body.infer_type(checker)
 
         # After inferring body's type, arg type might be known.
-        arg_type = checker.unifiers.root_of(arg_type)
+        arg_type = checker.unifiers.get_concrete(arg_type)
 
         return Fn(arg_type, body_type)
 
@@ -81,24 +82,20 @@ class Call(AstNode):
 
     def infer_type(self, checker: check.Checker) -> Type:
 
-        # Set up a function type.
-        alpha = checker.fresh_var()
-        beta = checker.fresh_var()
-        fn_type_joiner = Fn(alpha, beta)
-
-        # Ensure the `self.fn` refers to a Fn type.
-        fn_type = self.fn.infer_type(checker)
-        fn_type_instance = checker.duplicate_type(fn_type)
-        checker.unify(fn_type_instance, fn_type_joiner)
-
         # Get best guess as to the type of `self.arg`.
         arg_type = self.arg.infer_type(checker)
 
-        # Link that best guess with the new type variable `alpha`.
-        checker.unify(arg_type, alpha)
+        # Set up a function type.
+        beta = checker.fresh_var()
+        fn_type_joiner = Fn(arg_type, beta)
+
+        # Ensure the `self.fn` refers to a Fn type.
+        fn_type = self.fn.infer_type(checker)
+
+        checker.unify(fn_type, fn_type_joiner)
 
         # In case beta's root was changed in the last unification, get it's current root.
-        return checker.unifiers.root_of(beta)
+        return checker.unifiers.get_concrete(beta)
 
 
 @dataclass
@@ -118,7 +115,7 @@ class If(AstNode):
         no_type = self.no.infer_type(checker)
         checker.unify(yes_type, no_type)
 
-        return yes_type
+        return checker.unifiers.get_concrete(yes_type)
 
 
 @dataclass
@@ -135,11 +132,11 @@ class Let(AstNode):
 
             # First, bind `left` to a fresh type variable. This allows
             # for recursive let statements.
-            alpha = checker.fresh_var()
-            checker.type_env[self.left] = alpha
+            with checker.scoped_non_generic() as alpha:
+                checker.type_env[self.left] = alpha
 
-            # Next infer the type of `right` using the binding just created.
-            right_type = self.right.infer_type(checker)
+                # Next infer the type of `right` using the binding just created.
+                right_type = self.right.infer_type(checker)
 
             # Link the type variable with the inferred type of `right`.
             checker.unify(alpha, right_type)
