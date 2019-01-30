@@ -10,8 +10,8 @@ MISSING = object()
 
 @dataclass
 class Env(Generic[K, V]):
-    parent: Optional[Env[K, V]] = None
     locals: Dict[K, V] = field(default_factory=dict)
+    parent: Optional[Env[K, V]] = None
 
     def __setitem__(self, key: K, value: V):
         self.locals[key] = value
