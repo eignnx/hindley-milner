@@ -1,15 +1,15 @@
 from contextlib import contextmanager
-from typing import Set
 
-from hindley_milner.src import env, utils
-from hindley_milner.src import syntax, typ
+from hindley_milner.src import env
+from hindley_milner.src import syntax
+from hindley_milner.src import typ
+from hindley_milner.src import unifier_set
 from hindley_milner.src import std_env
-from hindley_milner.src.unifier_set import UnifierSet, UnificationError, RecursiveUnificationError
 
 
 class Checker:
     def __init__(self):
-        self.unifiers = UnifierSet()
+        self.unifiers = unifier_set.UnifierSet()
         self.type_env: std_env.StdEnv = std_env.std_env(self)
 
     def is_non_generic(self, v):

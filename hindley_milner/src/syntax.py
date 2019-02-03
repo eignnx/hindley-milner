@@ -4,12 +4,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 from hindley_milner.src import check
-from hindley_milner.src.typ import Type, Fn, Bool
+from hindley_milner.src import typ
 
 
 class AstNode(ABC):
     @abstractmethod
-    def infer_type(self, checker: check.Checker) -> Type:
+    def infer_type(self, checker: check.Checker) -> typ.Type:
         pass
 
 
@@ -17,7 +17,7 @@ class Value(AstNode, ABC):
     pass
 
 
-@dataclass(frozen=True)
+@dataclass(eq=True)
 class Ident(Value):
     """
     An identifier.
@@ -25,14 +25,17 @@ class Ident(Value):
     """
     name: str
 
-    def infer_type(self, checker: check.Checker) -> Type:
+    def infer_type(self, checker: check.Checker) -> typ.Type:
         return checker.duplicate_type(checker.type_env[self])
 
     def __str__(self):
         return self.name
 
+    def __hash__(self):
+        return hash(self.name)
 
-@dataclass
+
+@dataclass(eq=True)
 class Const(Value):
     """
     A literal.
@@ -41,14 +44,14 @@ class Const(Value):
     value: object
     type: field(init=False)
 
-    def infer_type(self, checker: check.Checker) -> Type:
+    def infer_type(self, checker: check.Checker) -> typ.Type:
         return self.type
 
     def __str__(self):
         return str(self.value)
 
 
-@dataclass
+@dataclass(eq=True)
 class Lambda(AstNode):
     """
     lambda param: body
@@ -56,7 +59,7 @@ class Lambda(AstNode):
     param: Ident
     body: AstNode
 
-    def infer_type(self, checker: check.Checker) -> Type:
+    def infer_type(self, checker: check.Checker) -> typ.Type:
 
         # In a new scope, infer the type of the body.
         # Scoped because `self.param` is valid only inside this scope.
@@ -69,10 +72,10 @@ class Lambda(AstNode):
         # After inferring body's type, arg type might be known.
         arg_type = checker.unifiers.get_concrete(arg_type)
 
-        return Fn(arg_type, body_type)
+        return typ.Fn(arg_type, body_type)
 
 
-@dataclass
+@dataclass(eq=True)
 class Call(AstNode):
     """
     fn(arg)
@@ -80,14 +83,14 @@ class Call(AstNode):
     fn: AstNode
     arg: AstNode
 
-    def infer_type(self, checker: check.Checker) -> Type:
+    def infer_type(self, checker: check.Checker) -> typ.Type:
 
         # Get best guess as to the type of `self.arg`.
         arg_type = self.arg.infer_type(checker)
 
         # Set up a function type.
         beta = checker.fresh_var()
-        fn_type_joiner = Fn(arg_type, beta)
+        fn_type_joiner = typ.Fn(arg_type, beta)
 
         # Ensure the `self.fn` refers to a Fn type.
         fn_type = self.fn.infer_type(checker)
@@ -99,7 +102,7 @@ class Call(AstNode):
         return checker.unifiers.get_concrete(beta)
 
 
-@dataclass
+@dataclass(eq=True)
 class If(AstNode):
     """
     if pred then yes else no
@@ -108,9 +111,9 @@ class If(AstNode):
     yes: AstNode
     no: AstNode
 
-    def infer_type(self, checker: check.Checker) -> Type:
+    def infer_type(self, checker: check.Checker) -> typ.Type:
         pred_type = self.pred.infer_type(checker)
-        checker.unify(pred_type, Bool)
+        checker.unify(pred_type, typ.Bool)
 
         yes_type = self.yes.infer_type(checker)
         no_type = self.no.infer_type(checker)
@@ -119,7 +122,7 @@ class If(AstNode):
         return checker.unifiers.get_concrete(yes_type)
 
 
-@dataclass
+@dataclass(eq=True)
 class Let(AstNode):
     """
     let left = right in body
@@ -128,7 +131,7 @@ class Let(AstNode):
     right: AstNode
     body: AstNode
 
-    def infer_type(self, checker: check.Checker) -> Type:
+    def infer_type(self, checker: check.Checker) -> typ.Type:
 
         # Scope the `left = right` binding.
         with checker.new_scope():

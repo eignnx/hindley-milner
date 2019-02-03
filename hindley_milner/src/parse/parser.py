@@ -1,0 +1,79 @@
+import rply
+
+from hindley_milner.src import typ
+from hindley_milner.src import syntax
+from hindley_milner.src.parse import lexer
+
+pg = rply.ParserGenerator(
+    lexer.all_tokens,
+    precedence=[
+        ("left", ["FN", "ROCKET"]),
+        ("left", ["INT_LIT", "BOOL_LIT", "IDENT"]),
+        ("left", ["LET", "VAL", "EQ", "IN", "END"]),
+        ("left", ["IF", "THEN", "ELSE"]),
+        ("left", ["LPAREN", "RPAREN"]),
+        ("left", ["application"]),
+    ],
+    cache_id="hindley-milner"
+)
+
+
+@pg.production("expr : IF expr THEN expr ELSE expr")
+def if_expr(s):
+    return syntax.If(s[1], s[3], s[5])
+
+
+@pg.production("expr : LET VAL IDENT EQ expr IN expr END")
+def let_expr(s):
+    ident = syntax.Ident(s[2].value)
+    return syntax.Let(ident, s[4], s[6])
+
+
+@pg.production("expr : FN IDENT ROCKET expr")
+def fn_expr(s):
+    param = syntax.Ident(s[1].value)
+    return syntax.Lambda(param, s[3])
+
+
+@pg.production("expr : expr expr", precedence="application")
+def fn_call(s):
+    return syntax.Call(s[0], s[1])
+
+
+@pg.production("expr : INT_LIT")
+def int_lit_expr(s):
+    value = int(s[0].value)
+    return syntax.Const(value, typ.Int)
+
+
+@pg.production("expr : BOOL_LIT")
+def bool_lit_expr(s):
+    value = {
+        "true": True,
+        "false": False
+    }[s[0].value]
+    return syntax.Const(value, typ.Bool)
+
+
+@pg.production("expr : IDENT")
+def ident_expr(s):
+    return syntax.Ident(s[0].value)
+
+
+@pg.production("expr : LPAREN expr RPAREN")
+def paren_expr(s):
+    return s[1]
+
+
+parser = pg.build()
+
+if __name__ == '__main__':
+    def parse(txt):
+        return parser.parse(lexer.lexer.lex(txt))
+
+    from hindley_milner.src.check import Checker
+    checker = Checker()
+    code = "let val f = fn a => a in pair (f true) (f 13) end"
+    ast = parse(code)
+    print(ast)
+    ast.infer_type(checker)

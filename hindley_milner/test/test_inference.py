@@ -1,5 +1,6 @@
 import pytest
 
+import parse
 from hindley_milner.src import check
 from hindley_milner.src.syntax import Const, Ident, Lambda, Call, Let, If
 from hindley_milner.src.typ import Int, Bool, Fn, Tuple, List
@@ -44,28 +45,15 @@ def test_lambda():
 
 
 def test_lambda_zero():
-    """
-    fun(x) zero(x) : int -> bool
-    """
+    fn = parse.parse("fn x => zero x")
     checker = check.Checker()
-
-    fn = Lambda(Ident("x"), Call(Ident("zero"), Ident("x")))
     fn_type = fn.infer_type(checker)
-
     assert checker.unifiers.get_concrete(fn_type) == Fn(Int, Bool)
 
 
-def test_simple_call():
-    """
-    pair(3)(true) : (int x bool)
-    """
+def test_two_arg_fn_call():
+    call = parse.parse("pair 3 true")
     checker = check.Checker()
-
-    three = Const(3, Int)
-    true = Const(True, Bool)
-    pair = Ident("pair")
-    call = Call(Call(pair, three), true)
-
     assert checker.unifiers.get_concrete(call.infer_type(checker)) == Tuple(Int, Bool)
 
 
@@ -84,57 +72,38 @@ def test_instantiation_call():
 
 
 def test_simple_let():
-    """
-    let x = 3 in x
-    """
-    checker = check.Checker()
+    let = parse.parse("""
+        let
+          val x = 3
+        in
+          x
+        end
+    """)
 
-    x = Ident("x")
-    let = Let(x, Const(3, Int), x)
+    checker = check.Checker()
     assert checker.unifiers.get_concrete(let.infer_type(checker)) == Int
 
 
 def test_bad_application():
-    """
-    fun(f) pair( f(3) )( f(true) ) : [type error]
-    """
+    fn = parse.parse("""
+        fn f => pair (f 3) (f true)
+    """)
+
     checker = check.Checker()
-
-    f = Ident("f")
-    three = Const(3, Int)
-    true = Const(True, Bool)
-    pair = Ident("pair")  # From std_env.
-
-    f_of_3 = Call(f, three)
-    f_of_true = Call(f, true)
-    pair_call = Call(Call(pair, f_of_3), f_of_true)
-    fn = Lambda(f, pair_call)
-
     with pytest.raises(UnificationError):
         fn.infer_type(checker)
 
 
 def test_complex_let():
-    """
-    let f = fun(a) a
-    in pair( f(3) )( f(true) )
-    """
+    let = parse.parse("""
+        let
+          val f = fn a => a
+        in
+          pair (f 3) (f true)
+        end
+    """)
+
     checker = check.Checker()
-
-    f = Ident("f")
-    a = Ident("a")
-    three = Const(3, Int)
-    true = Const(True, Bool)
-    pair = Ident("pair")  # From std_env.
-
-    fn = Lambda(a, a)
-
-    f_of_3 = Call(f, three)
-    f_of_true = Call(f, true)
-    pair_call = Call(Call(pair, f_of_3), f_of_true)
-
-    let = Let(f, fn, pair_call)
-
     inferred = let.infer_type(checker)
     assert checker.unifiers.get_concrete(inferred) == Tuple(Int, Bool)
 
@@ -145,7 +114,7 @@ def test_length_fn():
         if null(l)
             then 0
             else succ(length(tail(l)))
-    in length([true])
+    in length([true, false])
     """
     checker = check.Checker()
 
@@ -167,8 +136,22 @@ def test_length_fn():
 
     fn = Lambda(l, if_stmt)
 
-    body = Call(length, Const([True], List(Bool)))
+    body = Call(length, Const([True, False], List(Bool)))
     let = Let(length, fn, body)
 
     inferred = let.infer_type(checker)
     assert checker.unifiers.get_concrete(inferred) == Int
+
+
+def test_parser_let():
+    checker = check.Checker()
+    let = parse.parse("""
+        let
+          val f = fn x => x
+        in
+          pair (f 3) (f true)
+        end
+    """)
+    inferred = let.infer_type(checker)
+    assert checker.unifiers.get_concrete(inferred) == Tuple(Int, Bool)
+

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from hindley_milner.src import env, check
-from hindley_milner.src import syntax, typ
+from hindley_milner.src import env, check, typ, syntax
 
 StdEnv = env.Env[syntax.Ident, typ.Type]
 
@@ -13,8 +12,6 @@ def std_env(checker: check.Checker) -> StdEnv:
     W = checker.fresh_var()
 
     return env.Env(locals={
-        syntax.Ident("true"): typ.Bool,
-        syntax.Ident("false"): typ.Bool,
         syntax.Ident("null"): typ.Fn(typ.List(T), typ.Bool),
         syntax.Ident("tail"): typ.Fn(typ.List(U), typ.List(U)),
         syntax.Ident("zero"): typ.Fn(typ.Int, typ.Bool),
