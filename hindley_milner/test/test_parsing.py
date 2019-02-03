@@ -17,6 +17,29 @@ def test_if_stmt():
 
     assert parsed_if == built_if
 
+
+def test_fun_decl_in_let():
+    fun_decl = parse("""
+        let
+          fun f x y z = 1
+        in
+          f
+        end
+    """)
+
+    nested_lambda = parse("""
+        let
+          val f = fn x => fn y => fn z => 1
+        in
+          f
+        end
+    """)
+
+    assert fun_decl == nested_lambda
+
+
+
+
 def test_lambda():
     parsed_fn = parse("fn x => zero x")
     built_fn = Lambda(Ident("x"), Call(Ident("zero"), Ident("x")))

@@ -14,7 +14,8 @@ lg.add("IF", r"if")
 lg.add("THEN", r"then")
 lg.add("ELSE", r"else")
 
-lg.add("FN", r"fn")
+lg.add("FN", r"fn")  # for lambda expressions
+lg.add("FUN", r"fun")  # for function definitions
 
 lg.add("LPAREN", r"\(")
 lg.add("RPAREN", r"\)")

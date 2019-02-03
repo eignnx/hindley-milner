@@ -1,5 +1,8 @@
+from functools import reduce
+
 import rply
 
+import utils
 from hindley_milner.src import typ
 from hindley_milner.src import syntax
 from hindley_milner.src.parse import lexer
@@ -10,7 +13,8 @@ pg = rply.ParserGenerator(
         ("left", ["FN", "ROCKET"]),
         ("left", ["IF", "THEN", "ELSE"]),
         ("left", ["INT_LIT", "BOOL_LIT", "IDENT"]),
-        ("left", ["LET", "VAL", "EQ", "IN", "END"]),
+        ("left", ["VAL", "FUN"]),
+        ("left", ["LET", "EQ", "IN", "END"]),
         ("left", ["LPAREN", "RPAREN"]),
         ("left", ["application"]),
     ],
@@ -23,10 +27,39 @@ def if_expr(s):
     return syntax.If(s[1], s[3], s[5])
 
 
-@pg.production("expr : LET VAL IDENT EQ expr IN expr END")
+@pg.production("expr : LET decl IN expr END")
 def let_expr(s):
-    ident = syntax.Ident(s[2].value)
-    return syntax.Let(ident, s[4], s[6])
+    decl = s[1]
+    return syntax.Let(decl["lhs"], decl["rhs"], s[3])
+
+
+@pg.production("decl : VAL IDENT EQ expr")
+def val_decl(s):
+    return {
+        "lhs": syntax.Ident(s[1].value),
+        "rhs": s[3],
+    }
+
+
+@pg.production("decl : FUN IDENT params EQ expr")
+def fun_decl(s):
+    params = s[2]
+    body = s[4]
+    fn = utils.foldr(syntax.Lambda, params + [body])
+    return {
+        "lhs": syntax.Ident(s[1].value),
+        "rhs": fn,
+    }
+
+
+@pg.production("params : IDENT")
+def params_single(s):
+    return [syntax.Ident(s[0].value)]
+
+
+@pg.production("params : params IDENT")
+def params_multi(s):
+    return s[0] + [syntax.Ident(s[1].value)]
 
 
 @pg.production("expr : FN IDENT ROCKET expr")

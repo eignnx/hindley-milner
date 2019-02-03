@@ -1,5 +1,6 @@
+import functools
 from itertools import tee
-from typing import Iterator
+from typing import Iterator, Callable, TypeVar, Iterable
 
 from hindley_milner.src import unicode
 
@@ -31,3 +32,21 @@ def instance(cls):
     :return:
     """
     return cls()
+
+
+def flip(func):
+    """Source: https://www.burgaud.com/foldl-foldr-python"""
+    @functools.wraps(func)
+    def newfunc(x, y):
+        return func(y, x)
+    return newfunc
+
+
+T = TypeVar("T")
+U = TypeVar("U")
+V = TypeVar("V")
+
+
+def foldr(func: Callable[[T, U], V], xs: Iterable):
+    """Source: https://www.burgaud.com/foldl-foldr-python"""
+    return functools.reduce(flip(func), reversed(xs))
