@@ -8,9 +8,9 @@ pg = rply.ParserGenerator(
     lexer.all_tokens,
     precedence=[
         ("left", ["FN", "ROCKET"]),
+        ("left", ["IF", "THEN", "ELSE"]),
         ("left", ["INT_LIT", "BOOL_LIT", "IDENT"]),
         ("left", ["LET", "VAL", "EQ", "IN", "END"]),
-        ("left", ["IF", "THEN", "ELSE"]),
         ("left", ["LPAREN", "RPAREN"]),
         ("left", ["application"]),
     ],

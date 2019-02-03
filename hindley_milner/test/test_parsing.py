@@ -1,7 +1,21 @@
 from hindley_milner.src.parse import parse
-from hindley_milner.src.syntax import Ident, Const, Lambda, Call, Let
+from hindley_milner.src.syntax import Ident, Const, Lambda, Call, Let, If
 from hindley_milner.src.typ import Int, Bool
 
+
+def test_if_stmt():
+    parsed_if = parse("if true then succ 3 else pred 5")
+
+    three = Const(3, Int)
+    five = Const(5, Int)
+    true = Const(True, Bool)
+    pred = Ident("pred")
+    pred_call = Call(pred, five)
+    succ = Ident("succ")
+    succ_call = Call(succ, three)
+    built_if = If(true, succ_call, pred_call)
+
+    assert parsed_if == built_if
 
 def test_lambda():
     parsed_fn = parse("fn x => zero x")
