@@ -1,8 +1,7 @@
-import collections
-
 import rply
 
 from hindley_milner.src import check
+from hindley_milner.src import unifier_set
 from hindley_milner.src import parse
 from hindley_milner.src import env
 
@@ -33,13 +32,15 @@ def repl():
             print(f"Parsing Error: Unexpected token on line {lineno}, column {colno}!")
             continue
 
-
         try:
             t = ast.infer_type(checker)
             t = checker.unifiers.get_concrete(t)
             print(f"_ : {t}")
         except env.EnvKeyError as err:
             print(f"Semantic Error: Unrecognized symbol '{err.key}'!")
+            continue
+        except unifier_set.UnificationError as err:
+            print(err.msg)
             continue
 
 

@@ -5,7 +5,8 @@ from hindley_milner.src.disjoint_set import DisjointSet
 
 
 class UnificationError(Exception):
-    pass
+    def __init__(self, msg):
+        self.msg = msg
 
 
 class RecursiveUnificationError(UnificationError):
