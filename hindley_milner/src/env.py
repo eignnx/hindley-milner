@@ -8,6 +8,11 @@ V = TypeVar("V")
 MISSING = object()
 
 
+class EnvKeyError(Exception):
+    def __init__(self, key):
+        self.key = key
+
+
 @dataclass
 class Env(Generic[K, V]):
     locals: Dict[K, V] = field(default_factory=dict)
@@ -23,4 +28,4 @@ class Env(Generic[K, V]):
         elif self.parent is not None:
             return self.parent[key]
         else:
-            raise KeyError
+            raise EnvKeyError(key)
