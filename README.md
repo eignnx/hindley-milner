@@ -5,29 +5,20 @@ An implementation of the Hindley-Milner type-inference algorithm as described in
 See [Bodil Stokke's excellent talk](https://www.youtube.com/watch?v=8coUL8G1lFA) on the subject, and Luca Cardelli's 1988 paper [Basic Polymorphic Typechecking](http://lucacardelli.name/Papers/BasicTypechecking.pdf).
 
 ## Example
-```python3
-import src.check as check
-from src.syntax import Const, Ident, Lambda, Call
-from src.typ import Int, Bool, Fn
-
-def test_lambda():
-    checker = check.Checker()
-
-    id = Lambda(Ident("x"), Ident("x")) # WIP!
-    id_type = id.infer_type(checker)
-
-    T = checker.fresh_var()
-    equiv_type = Fn(T, T)
-    checker.unify(id_type, equiv_type)
-    assert True
-
-
-def test_call():
-    checker = check.Checker()
-
-    id = Lambda(Ident("x"), Ident("x"))
-    checker.type_env[Ident("id")] = id.infer_type(checker)
-
-    call = Call(Ident("id"), Const(3, Int))
-    assert call.infer_type(checker) == Int
+The top-level package has a [`__main__.py`](https://github.com/eignnx/hindley-milner/blob/master/hindley_milner/__main__.py) file which will run a repl. Type in an ML expression, and the expression's type will be displayed.
+```
+$ git clone https://github.com/eignnx/hindley-milner.git
+$ cd hindley_milner
+$ source venv/bin/activate
+(venv) $ python -m hindley_milner
+==> let fun f x y = times x y in f end
+_ : (Int → (Int → Int))
+==> null
+_ : ((list κ) → Bool)
+==> fn x => pair x x
+_ : (λ → (λ × λ))
+==> if 555 then true else false
+Type mismatch: Int != Bool
+==> let fun length l = if null l then 0 else succ (length (tail l)) in length end
+_ : ((list τ) → Int)
 ```
