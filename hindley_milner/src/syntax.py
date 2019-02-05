@@ -63,11 +63,10 @@ class Lambda(AstNode):
 
         # In a new scope, infer the type of the body.
         # Scoped because `self.param` is valid only inside this scope.
-        with checker.new_scope():
-            with checker.scoped_non_generic() as arg_type:
-                # Parameter types are non-generic while checking the body.
-                checker.type_env[self.param] = arg_type
-                body_type = self.body.infer_type(checker)
+        # Parameter types are non-generic while checking the body.
+        with checker.new_scope(), checker.scoped_non_generic() as arg_type:
+            checker.type_env[self.param] = arg_type
+            body_type = self.body.infer_type(checker)
 
         # After inferring body's type, arg type might be known.
         arg_type = checker.unifiers.get_concrete(arg_type)
