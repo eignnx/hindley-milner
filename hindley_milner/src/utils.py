@@ -50,3 +50,19 @@ V = TypeVar("V")
 def foldr(func: Callable[[T, U], V], xs: Iterable):
     """Source: https://www.burgaud.com/foldl-foldr-python"""
     return functools.reduce(flip(func), reversed(xs))
+
+
+def cache_in_attr(attr_name: str):
+    """
+    A decorator that will cache a method's returned value in the attribute
+    specified by `attr_name`. The instance that owns the decorated method
+    is where the value will be stored.
+    """
+    def decorator(fn):
+        @functools.wraps(fn)
+        def new_fn(self, *args, **kwargs):
+            ret = fn(self, *args, **kwargs)
+            setattr(self, attr_name, ret)
+            return ret
+        return new_fn
+    return decorator

@@ -45,10 +45,11 @@ def test_lambda():
 
 
 def test_lambda_zero():
-    fn = parse.parse("fn x => zero x")
+    fn: Lambda = parse.parse("fn x => zero x")
     checker = check.Checker()
     fn_type = fn.infer_type(checker)
     assert checker.unifiers.get_concrete(fn_type) == Fn(Int, Bool)
+    assert fn.body.type == Bool
 
 
 def test_two_arg_fn_call():
@@ -72,7 +73,7 @@ def test_instantiation_call():
 
 
 def test_simple_let():
-    let = parse.parse("""
+    let: Let = parse.parse("""
         let
           val x = 3
         in
@@ -82,6 +83,7 @@ def test_simple_let():
 
     checker = check.Checker()
     assert checker.unifiers.get_concrete(let.infer_type(checker)) == Int
+    assert let.right.type == Int
 
 
 def test_bad_application():

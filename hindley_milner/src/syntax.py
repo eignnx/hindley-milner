@@ -5,12 +5,30 @@ from dataclasses import dataclass, field
 
 from hindley_milner.src import check
 from hindley_milner.src import typ
+from hindley_milner.src import utils
 
 
 class AstNode(ABC):
+    def __init__(self):
+        self._type = None
+
     @abstractmethod
     def infer_type(self, checker: check.Checker) -> typ.Type:
         pass
+
+    @property
+    def type(self) -> typ.Type:
+        """
+        Returns the cached type inferred for this ast node. Must be called
+        AFTER calling `infer_type` on the instance.
+        """
+        if self._type is None:
+            cls = self.__class__.__name__
+            msg = f"The attribute {cls}.type is not initialized until after "\
+                  f"calling {cls}.infer_type!"
+            raise AttributeError(msg)
+        else:
+            return self._type
 
 
 class Value(AstNode, ABC):
@@ -25,6 +43,7 @@ class Ident(Value):
     """
     name: str
 
+    @utils.cache_in_attr("_type")
     def infer_type(self, checker: check.Checker) -> typ.Type:
         return checker.duplicate_type(checker.type_env[self])
 
@@ -42,10 +61,10 @@ class Const(Value):
     1, true, -4.21983, point { x=1, y=2 }
     """
     value: object
-    type: field(init=False)
+    _type: field(init=False)  # `_` ensures no collision with superclass property
 
     def infer_type(self, checker: check.Checker) -> typ.Type:
-        return self.type
+        return self.type  # Note: calls superclass property
 
     def __str__(self):
         return str(self.value)
@@ -59,6 +78,7 @@ class Lambda(AstNode):
     param: Ident
     body: AstNode
 
+    @utils.cache_in_attr("_type")
     def infer_type(self, checker: check.Checker) -> typ.Type:
 
         # In a new scope, infer the type of the body.
@@ -82,6 +102,7 @@ class Call(AstNode):
     fn: AstNode
     arg: AstNode
 
+    @utils.cache_in_attr("_type")
     def infer_type(self, checker: check.Checker) -> typ.Type:
 
         # Get best guess as to the type of `self.arg`.
@@ -110,6 +131,7 @@ class If(AstNode):
     yes: AstNode
     no: AstNode
 
+    @utils.cache_in_attr("_type")
     def infer_type(self, checker: check.Checker) -> typ.Type:
         pred_type = self.pred.infer_type(checker)
         checker.unify(pred_type, typ.Bool)
@@ -130,6 +152,7 @@ class Let(AstNode):
     right: AstNode
     body: AstNode
 
+    @utils.cache_in_attr("_type")
     def infer_type(self, checker: check.Checker) -> typ.Type:
 
         # Scope the `left = right` binding.
