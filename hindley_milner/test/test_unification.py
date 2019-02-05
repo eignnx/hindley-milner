@@ -88,7 +88,7 @@ def test_complex_generic_non_generic_unification():
     assert checker.is_non_generic(generic)
 
 
-def test_get_concrete():
+def test_concretize():
     checker = Checker()
 
     T = checker.fresh_var()
@@ -98,6 +98,6 @@ def test_get_concrete():
     checker.unify(T, List(Bool))
     checker.unify(U, T)
 
-    concrete = checker.unifiers.get_concrete(tup)
+    concrete = checker.concretize(tup)
     assert concrete == Tuple(List(Bool), Fn(List(Bool), Int))
 

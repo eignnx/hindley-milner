@@ -48,14 +48,14 @@ def test_lambda_zero():
     fn: Lambda = parse.parse("fn x => zero x")
     checker = check.Checker()
     fn_type = fn.infer_type(checker)
-    assert checker.unifiers.get_concrete(fn_type) == Fn(Int, Bool)
+    assert checker.concretize(fn_type) == Fn(Int, Bool)
     assert fn.body.type == Bool
 
 
 def test_two_arg_fn_call():
     call = parse.parse("pair 3 true")
     checker = check.Checker()
-    assert checker.unifiers.get_concrete(call.infer_type(checker)) == Tuple(Int, Bool)
+    assert checker.concretize(call.infer_type(checker)) == Tuple(Int, Bool)
 
 
 def test_instantiation_call():
@@ -69,7 +69,7 @@ def test_instantiation_call():
     checker.type_env[Ident("id")] = id.infer_type(checker)
 
     call = Call(Ident("id"), Const(3, Int))
-    assert checker.unifiers.get_concrete(call.infer_type(checker)) == Int
+    assert checker.concretize(call.infer_type(checker)) == Int
 
 
 def test_simple_let():
@@ -82,7 +82,7 @@ def test_simple_let():
     """)
 
     checker = check.Checker()
-    assert checker.unifiers.get_concrete(let.infer_type(checker)) == Int
+    assert checker.concretize(let.infer_type(checker)) == Int
     assert let.right.type == Int
 
 
@@ -107,7 +107,7 @@ def test_complex_let():
 
     checker = check.Checker()
     inferred = let.infer_type(checker)
-    assert checker.unifiers.get_concrete(inferred) == Tuple(Int, Bool)
+    assert checker.concretize(inferred) == Tuple(Int, Bool)
 
 
 def test_length_fn():
@@ -142,7 +142,7 @@ def test_length_fn():
     let = Let(length, fn, body)
 
     inferred = let.infer_type(checker)
-    assert checker.unifiers.get_concrete(inferred) == Int
+    assert checker.concretize(inferred) == Int
 
 
 def test_parser_let():
@@ -155,5 +155,5 @@ def test_parser_let():
         end
     """)
     inferred = let.infer_type(checker)
-    assert checker.unifiers.get_concrete(inferred) == Tuple(Int, Bool)
+    assert checker.concretize(inferred) == Tuple(Int, Bool)
 

@@ -34,7 +34,7 @@ def repl():
 
         try:
             t = ast.infer_type(checker)
-            t = checker.unifiers.get_concrete(t)
+            t = checker.unifiers.concretize(t)
             print(f"_ : {t}")
         except env.EnvKeyError as err:
             print(f"Semantic Error: Unrecognized symbol '{err.key}'!")

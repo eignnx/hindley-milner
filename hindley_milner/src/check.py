@@ -55,6 +55,18 @@ class Checker:
     def fresh_var(self, non_generic=False) -> typ.Var:
         return self.unifiers.fresh_var(non_generic)
 
+    def concretize(self, t: typ.Type) -> typ.Type:
+        """
+        Recursively builds up a type by replacing all known `Var`s with the
+        concrete types they refer to.
+
+        Ex:
+            If T has been unified with Int:
+                self.concretize(T) -> Int
+                self.concretize(Tuple(T)) -> Tuple(Int)
+        """
+        return self.unifiers.concretize(t)
+
     def duplicate_type(self, t: typ.Type, substitutions=None) -> typ.Type:
         """
         Duplicates a type, taking into consideration the genericness and
@@ -66,16 +78,12 @@ class Checker:
         "In copying a type, we must only copy the generic variables, while the
         non-generic variables must be shared."
             -- Luca Cardelli, Basic Polymorphic Typechecking, 1988, pg. 11
-
-        :param t:
-        :param substitutions:
-        :return:
         """
         substitutions = dict() if substitutions is None else substitutions
 
         # If t = Var("a") and Var("a") is unified with Tuple(x, y), duplicate
         # the Tuple, not the Var.
-        t = self.unifiers.get_concrete(t)
+        t = self.unifiers.concretize(t)
 
         if type(t) is typ.Var:
             if self.is_non_generic(t):

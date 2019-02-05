@@ -116,30 +116,22 @@ class UnifierSet(DisjointSet):
     def is_non_generic(self, v):
         return v in self.non_generic_vars
 
-    def get_concrete(self, t: typ.Type) -> typ.Type:
+    def concretize(self, t: typ.Type) -> typ.Type:
         """
         Recursively builds up a type by replacing all known `Var`s with the
         concrete types they refer to.
 
         Ex:
             If T has been unified with Int:
-                self.get_concrete(T) -> Int.
-
-            If T has been unified with Int:
-                self.get_concrete(Tuple(T)) -> Tuple(Int).
-
-        :param t:
-        :return:
+                self.concretize(T) -> Int
+                self.concretize(Tuple(T)) -> Tuple(Int)
         """
         if type(t) is typ.Var:
             r = self.root_of(t)
-            if r == t:
-                return r
-            else:
-                return self.get_concrete(r)
+            return r if r == t else self.concretize(r)
         elif isinstance(t, typ.Poly):
             cls = type(t)
-            vals = (self.get_concrete(v) for v in t.vals)
+            vals = (self.concretize(v) for v in t.vals)
             return cls(*vals)
 
     def make_generic(self, v: typ.Var):

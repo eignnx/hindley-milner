@@ -89,7 +89,7 @@ class Lambda(AstNode):
             body_type = self.body.infer_type(checker)
 
         # After inferring body's type, arg type might be known.
-        arg_type = checker.unifiers.get_concrete(arg_type)
+        arg_type = checker.unifiers.concretize(arg_type)
 
         return typ.Fn(arg_type, body_type)
 
@@ -119,7 +119,7 @@ class Call(AstNode):
 
         # In case beta's root was changed in the last unification, get it's
         # current root.
-        return checker.unifiers.get_concrete(beta)
+        return checker.unifiers.concretize(beta)
 
 
 @dataclass(eq=True)
@@ -140,7 +140,7 @@ class If(AstNode):
         no_type = self.no.infer_type(checker)
         checker.unify(yes_type, no_type)
 
-        return checker.unifiers.get_concrete(yes_type)
+        return checker.unifiers.concretize(yes_type)
 
 
 @dataclass(eq=True)
