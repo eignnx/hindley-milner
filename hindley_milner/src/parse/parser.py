@@ -2,7 +2,7 @@ from functools import reduce
 
 import rply
 
-import utils
+from hindley_milner.src import utils
 from hindley_milner.src import typ
 from hindley_milner.src import syntax
 from hindley_milner.src.parse import lexer
